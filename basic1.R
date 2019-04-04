@@ -86,6 +86,7 @@ seasonplot(ts.sa, 12, col=rainbow(12), year.labels=TRUE, main="Seasonal plot: vi
 
 
 library(tseries)
+
 #unit root test? 
 adf.test(visits) # p-value < 0.05 indicates the TS is stationary
 
@@ -95,12 +96,19 @@ adf.test(visits) # p-value < 0.05 indicates the TS is stationary
 # Dickey-Fuller = -19.209, Lag order = 7, p-value = 0.01
 # alternative hypothesis: stationary
 
+trainV <- head(visits, n= (length(visits) -12) )
 
-fit <- arima(visits, order=c(1, 1, 2)) 
-             
+test<- tail(visits, n=12) 
+test
+
+fit <- arima(trainV, order=c(1, 0, 2), seasonal = c(0,1,1)) 
+      
+plot(fit)
+       
 accuracy(fit)
-forecast(fit, 5)
-plot(forecast(fit, 5))
+cast <- forecast(fit, 12)
+cast
+plot(forecast(fit, 12))
 
 
 visitsdiff1 <- diff(visits, differences=1)
