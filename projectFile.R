@@ -49,6 +49,26 @@ plot(forecast(fitV, 12,level = .95))
 
 tsdiag(fitV)
 
+#residuals of just visits 
+res.fr <- residuals(fitV)
+
+par(mfrow=c(1,3))
+
+plot(res.fr, main="Residuals from ARIMA method on visits",
+     ylab="", xlab="Years")
+
+Acf(res.fr, main="ACF of residuals")
+
+u <- residuals(fitV)
+
+m<-mean(u)
+std<-sqrt(var(u))
+hist(u, breaks=20, col="gray", prob=TRUE, 
+     xlab="Residuals", main="Histogram of residuals\n with Normal Curve")
+curve(dnorm(x, mean=m, sd=std), 
+      col="black", lwd=2, add=TRUE)
+
+
 # log transform 
 logvisits <- log(visits)
 
@@ -80,5 +100,36 @@ plot(forecast(fitLV, 12,level = .95))
 
 tsdiag(fitLV)
 
+#residuals of log visits 
+res.fr <- residuals(fitLV)
+
+par(mfrow=c(1,3))
+
+plot(res.fr, main="Residuals from ARIMA method on log visits",
+     ylab="", xlab="Years")
+
+Acf(res.fr, main="ACF of residuals")
+
+u <- residuals(fitLV)
+
+m<-mean(u)
+std<-sqrt(var(u))
+hist(u, breaks=20, col="gray", prob=TRUE, 
+     xlab="Residuals", main="Histogram of residuals\n with Normal Curve")
+curve(dnorm(x, mean=m, sd=std), 
+      col="black", lwd=2, add=TRUE)
+
+
+
+
+
+# distribution plots over months 
+boxplot(split(visits, cycle(visits)), names = month.abb, col = "gold")
+boxplot(split(logvisits, cycle(logvisits)), names = month.abb, col = "gold")
+boxplot(split(sqrt(visits), cycle(sqrt(visits))), names = month.abb, col = "gold")
+
+#sqrt transformation??? 
+sqrtvisitscomponents <- decompose(sqrt(visits))
+plot(sqrtvisitscomponents)
 
 
