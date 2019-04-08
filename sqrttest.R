@@ -14,8 +14,11 @@ df <- data.frame( data$Recreation.Visits, data$Unemployment.Rate, data$MeanTempe
 library(TSA)
 library(tseries)
 library(forecast)
+
+
 # data before log transform ----
 visits <- (ts(df$data.Recreation.Visits[order(df$DATE)], frequency = 12, start = c(1986)))
+visits <- sqrt(visits)
 plot(visits)
 
 visitcomponents <- decompose(visits)
@@ -81,88 +84,4 @@ hist(u, breaks=20, col="gray", prob=TRUE,
 curve(dnorm(x, mean=m, sd=std), 
       col="black", lwd=2, add=TRUE)
 par(mfrow=c(1,1))
-
-# log transform  ---- 
-logvisits <- log(visits)
-
-logvisitscomponents <- decompose(logvisits)
-plot(logvisitscomponents)
-
-
-trainLV <- head(logvisits, n= (length(logvisits) -12) )
-testLV <- tail(logvisits, n=12) 
-
-trainLVcomponents <- decompose(trainLV)
-plot(trainLVcomponents)
-
-adf.test(trainLV) 
-# Augmented Dickey-Fuller Test
-# 
-# data:  trainLV
-# Dickey-Fuller = -23.802, Lag order = 7, p-value = 0.01
-# alternative hypothesis: stationary
-
-auto.arima(trainLV)
-
-fitLV <- Arima(trainLV, order=c(0, 0, 1), seasonal = c(2,1,1)) 
-
-accuracy(fitLV)
-castLV <- forecast(fitLV, 12)
-castLV
-accuracy(castLV, testLV)
-plot(forecast(fitLV, 12,level = .95))
-
-
-AR.mean.LV <-forecast(fitLV,h=12)$mean
-plot(testLV, main="Log Visits", ylab="", xlab="Months", col="darkblue")  
-lines(AR.mean.LV, col="red")
-
-# probably the accuracy plot we want 
-plot(castLV,xlim=c(2014,2017), lwd=2)
-lines(testLV, col="red",lwd=2)
-legend("topleft",lty=1,bty = "n",col=c("red","blue"),c("testData","ARIMAPred"))
-
-
-
-tsdiag(fitLV)
-
-#residuals of log visits 
-tsdisplay(residuals(fitLV))
-
-#https://rpubs.com/RatherBit/90267
-res.fr <- residuals(fitLV)
-
-par(mfrow=c(1,3))
-
-plot(res.fr, main="Residuals from ARIMA method on log visits",
-     ylab="", xlab="Years")
-
-Acf(res.fr, main="ACF of residuals")
-
-u <- residuals(fitLV)
-
-m<-mean(u)
-std<-sqrt(var(u))
-hist(u, breaks=20, col="gray", prob=TRUE, 
-     xlab="Residuals", main="Histogram of residuals\n with Normal Curve")
-curve(dnorm(x, mean=m, sd=std), 
-      col="black", lwd=2, add=TRUE)
-
-
-
-
-
-
-
-
-
-# distribution plots over months 
-boxplot(split(visits, cycle(visits)), names = month.abb, col = "gold")
-boxplot(split(logvisits, cycle(logvisits)), names = month.abb, col = "gold")
-boxplot(split(sqrt(visits), cycle(sqrt(visits))), names = month.abb, col = "gold")
-
-#sqrt transformation??? 
-sqrtvisitscomponents <- decompose(sqrt(visits))
-plot(sqrtvisitscomponents)
-
 
