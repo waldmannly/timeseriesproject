@@ -43,7 +43,7 @@ plot(trainVcomponents)
 dev.off()
 
 #get rid of the 1987 and use the non log transform 
-
+#todo---- outlier thing for 1987/1988 fires 
 
 adf.test(trainV) 
 # Augmented Dickey-Fuller Test
