@@ -18,7 +18,7 @@ library(forecast)
 visits <- (ts(df$data.Recreation.Visits[order(df$DATE)], frequency = 12, start = c(1986)))
 
 
-png(filename="visits-ts-plot.png", 
+png(filename="visits-ts-plot-outliers.png", 
     type="cairo",
     units="in", 
     width=8, 
@@ -30,7 +30,7 @@ dev.off()
 
 visitcomponents <- decompose(visits)
 
-png(filename="visits-components-ts-plot.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)
+png(filename="visits-components-ts-plot-outliers.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)
 plot(visitcomponents)
 dev.off()
 
@@ -38,7 +38,7 @@ trainV <- head(visits, n= (length(visits) -12) )
 testV <- tail(visits, n=12) 
 
 trainVcomponents <- decompose(trainV)
-png(filename="trainV-ts-plot.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)  
+png(filename="trainV-ts-plot-outliers.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)  
 plot(trainVcomponents)
 dev.off()
 
@@ -51,40 +51,49 @@ adf.test(trainV)
 
 auto.arima(trainV)
 
-fitV <- Arima(trainV, order=c(1, 0, 0), seasonal = c(0,1,1)) 
+fitV <- Arima(trainV, order=c(1, 0, 0), seasonal = c(0,1,1), xreg=as.numeric(seq(trainV ==32))) 
+
+#https://stats.stackexchange.com/questions/169564/arimax-prediction-using-forecast-package
+# gotta do some shit probably. 
+
+
+tf<-filter(1*(seq(1:(length(trainV)+5))==69),filter=0.5521330,method='recursive',side=1)*(-159917.76)
+forecast.arima<-Arima(log(trainV),order=c(0,0,1),xreg=tf[1:(length(tf)-5)])
+forecast.arima
+
 
 accuracy(fitV)
-castV <- forecast(fitV, h=12)
+castV <- forecast(fitV, h=12, 0)
 castV
-accuracy(castV, testV)
-png(filename="forecast95-fitV-plot.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)  
-plot(forecast(fitV, 12,level = .95))
+accuracy(castV, testV,newxreg=0)
+png(filename="forecast95-fitV-plot-outliers.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)  
+plot(forecast(fitV, 12,level = .95,newxreg=0))
 dev.off()
 
 AR.mean.V <-forecast(fitV,h=12)$mean
-png(filename="forecastMean-fitV-plot.png.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)  
+png(filename="forecastMean-fitV-plot-outliers.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)  
 plot(testV, main="Log Visits", ylab="", xlab="Months", col="darkblue")  
 lines(AR.mean.V, col="red")
 dev.off()
 
 # probably the accuracy plot we want 
-png(filename="forecastGOOD-fitV-plot.png.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)  
+png(filename="forecastGOOD-fitV-plot-outliers.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)  
 plot(castV,xlim=c(2014,2017), lwd=2)
 lines(testV, col="red",lwd=2)
 legend("topleft",lty=1,bty = "n",col=c("red","blue"),c("testData","ARIMAPred"))
 dev.off()
 
-png(filename="tsdiag-fitV-plot.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)
+png(filename="tsdiag-fitV-plot-outliers.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)
 tsdiag(fitV)
 dev.off()
 
 #residuals of just visits
-png(filename="residualsStandard-fitV-plot.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200) 
+png(filename="residualsStandard-fitV-plot-outliers.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200) 
 tsdisplay(residuals(fitV))
 dev.off()
 
 #https://rpubs.com/RatherBit/90267
-png(filename="residualsCustom-fitV-plot.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200) 
+png(filename="residualsCustom-fitV-plot-outliers.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200) 
 res.fr <- residuals(fitV)
 
 par(mfrow=c(1,3))
@@ -111,7 +120,7 @@ dev.off()
 logvisits <- log(visits)
 
 logvisitscomponents <- decompose(logvisits)
-png(filename="Logvisits-ts-plot.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)  
+png(filename="Logvisits-ts-plot-outliers.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)  
 plot(logvisitscomponents)
 dev.off()
 
@@ -119,7 +128,7 @@ trainLV <- head(logvisits, n= (length(logvisits) -12) )
 testLV <- tail(logvisits, n=12) 
 
 trainLVcomponents <- decompose(trainLV)
-png(filename="trainLV-components-ts-plot.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)  
+png(filename="trainLV-components-ts-plot-outliers.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)  
 plot(trainLVcomponents)
 dev.off()
 
@@ -132,45 +141,49 @@ adf.test(trainLV)
 
 auto.arima(trainLV)
 
-fitLV <- Arima(trainLV, order=c(0, 0, 1), seasonal = c(2,1,1)) 
+#https://stats.stackexchange.com/questions/169564/arimax-prediction-using-forecast-package
+# gotta do some shit probably. 
+
+fitLV <- Arima(trainLV, order=c(0, 0, 1), seasonal = c(2,1,1), io=(32)) 
+
 
 accuracy(fitLV)
 castLV <- forecast(fitLV, 12)
 castLV
 accuracy(castLV, testLV)
-png(filename="forecast95-fitLV-plot.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)  
+png(filename="forecast95-fitLV-plot-outliers.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)  
 plot(forecast(fitLV, 12,level = .95))
 dev.off()
 
 AR.mean.LV <-forecast(fitLV,h=12)$mean
-png(filename="forecastMean-fitLV-plot.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)  
+png(filename="forecastMean-fitLV-plot-outliers.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)  
 plot(testLV, main="Log Visits", ylab="", xlab="Months", col="darkblue")  
 lines(AR.mean.LV, col="red")
 dev.off()
 
 # probably the accuracy plot we want 
-png(filename="forecastGOOD-fitLV-plot.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)  
+png(filename="forecastGOOD-fitLV-plot-outliers.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)  
 plot(castLV,xlim=c(2014,2017), lwd=2)
 lines(testLV, col="red",lwd=2)
 legend("topleft",lty=1,bty = "n",col=c("red","blue"),c("testData","ARIMAPred"))
 dev.off()
 
-png(filename="tsdiag-fitLV-plot.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)
+png(filename="tsdiag-fitLV-plot-outliers.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)
 tsdiag(fitLV)
 dev.off()
 
 #residuals of log visits 
-png(filename="residualsStandard-fitLV-plot.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200) 
+png(filename="residualsStandard-fitLV-plot-outliers.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200) 
 tsdisplay(residuals(fitLV))
 dev.off()
 
 #https://rpubs.com/RatherBit/90267
-png(filename="residualsCustom-fitLV-plot.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200) 
+png(filename="residualsCustom-fitLV-plot-outliers.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200) 
 res.fr <- residuals(fitLV)
 
 par(mfrow=c(1,3))
 
- 
+
 plot(res.fr, main="Residuals from ARIMA method on log visits",
      ylab="", xlab="Years")
 
@@ -194,15 +207,15 @@ dev.off()
 
 
 # distribution plots over months 
-png(filename="visits-distribution-plot.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)
+png(filename="visits-distribution-plot-outliers.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)
 boxplot(split(visits, cycle(visits)), names = month.abb, col = "gold")
 dev.off()
 
-png(filename="logvisits-distribution-plot.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)
+png(filename="logvisits-distribution-plot-outliers.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)
 boxplot(split(logvisits, cycle(logvisits)), names = month.abb, col = "gold")
 dev.off()
 
-png(filename="sqrtvisits-distribution-plot.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)
+png(filename="sqrtvisits-distribution-plot-outliers.png",   type="cairo",units="in",   width=8, height=8, pointsize=14, res=200)
 boxplot(split(sqrt(visits), cycle(sqrt(visits))), names = month.abb, col = "gold")
 dev.off()
 
